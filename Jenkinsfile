@@ -1,0 +1,73 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'Java17'
+        maven 'Maven3'
+    }
+
+    environment {
+        DOCKERHUB_USER = "<docker-hub-id"
+        IMAGE_NAME     = "<image-name>"
+        IMAGE_TAG      = "latest"
+        FULL_IMAGE     = "${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: '<git-repo-name>',
+                    credentialsId: '<git-credentials-in-jenkins>'
+            }
+        }
+
+        stage('Build JAR') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Verify JAR') {
+            steps {
+                sh 'java -jar target/*.jar'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t $FULL_IMAGE .'
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                sh 'docker push $FULL_IMAGE'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Image pushed to Docker Hub: $FULL_IMAGE"
+        }
+        always {
+            sh 'docker logout || true'
+        }
+    }
+}
