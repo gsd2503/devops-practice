@@ -7,8 +7,8 @@ pipeline {
     }
 
     environment {
-        DOCKERHUB_USER = "<docker-hub-id"
-        IMAGE_NAME     = "<image-name>"
+        DOCKERHUB_USER = "gsd2503"
+        IMAGE_NAME     = "maven-java-docker-swarm"
         IMAGE_TAG      = "latest"
         FULL_IMAGE     = "${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
     }
@@ -18,8 +18,8 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: '<git-repo-name>',
-                    credentialsId: '<git-credentials-in-jenkins>'
+                    url: 'https://github.com/gsd2503/devops-practice.git',
+                    credentialsId: 'github-tocken'
             }
         }
 
